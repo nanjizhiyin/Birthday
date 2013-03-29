@@ -1,0 +1,30 @@
+//
+//  GPageControl.h
+//  xpfirst
+//
+//  Created by Gaojindan on 11-8-6.
+//  Copyright 2011年 __MyCompanyName__. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+@protocol GPageControlDelegate;
+
+@interface GPageControl : UIPageControl
+{
+    id<GPageControlDelegate> delegate;
+    UIImage *imagePageStateNormal;
+    UIImage *imagePageStateHighlighted;
+}
+- (id)initWithFrame:(CGRect)frame;
+@property(nonatomic,retain) id<GPageControlDelegate> delegate;
+@property (nonatomic, retain) UIImage *imagePageStateNormal;
+@property (nonatomic, retain) UIImage *imagePageStateHighlighted;
+-(IBAction)currentPage:(NSInteger)page;
+@end
+
+@protocol GPageControlDelegate <NSObject>
+@optional
+- (void)pageControl:(GPageControl *)pageControl index:(NSInteger)i;
+
+@end

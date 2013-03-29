@@ -1,0 +1,36 @@
+//
+//  UILabelStrikeThrough.m
+//  YINGYPH_HD
+//
+//  Created by Gaojindan on 12-1-18.
+//  Copyright (c) 2012年 __MyCompanyName__. All rights reserved.
+//
+
+#import "UILabelStrikeThrough.h"
+
+@implementation UILabelStrikeThrough
+@synthesize isWithStrikeThrough;
+- (void)drawRect:(CGRect)rect
+{
+    if (isWithStrikeThrough)
+    {
+        CGContextRef c = UIGraphicsGetCurrentContext();
+        
+        CGFloat black[4] = {205.0/255, 191.0/255, 193.0/255, 1.0f};
+        CGContextSetStrokeColor(c, black);
+        CGContextSetLineWidth(c, 1);
+        CGContextBeginPath(c);
+        CGContextMoveToPoint(c, self.bounds.origin.x, self.bounds.size.height-10);
+        CGContextAddLineToPoint(c, self.bounds.origin.x + self.bounds.size.width, 10);
+        CGContextStrokePath(c);
+    }
+    
+    [super drawRect:rect];
+}
+
+- (void)dealloc
+{
+    [super dealloc];
+}
+
+@end

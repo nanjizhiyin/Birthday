@@ -1,0 +1,28 @@
+//
+//  UIPickerSelect.h
+//  Haonz
+//
+//  Created by 金丹 郜 on 12-8-7.
+//  Copyright (c) 2012年 __MyCompanyName__. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+@protocol UIDateSelectDelegate;
+@interface UIPickerSelect : UIViewController
+{
+    UIPickerView *_pickerView;
+}
+- (void)setDelegates:(id)delegate;
+- (void)setTags:(NSInteger)tag;
+@property(nonatomic,retain) id<UIDateSelectDelegate> delegate;
+@property(nonatomic,retain) UIPickerView* pickerView;
+
+@end
+
+///////
+@protocol UIDateSelectDelegate <NSObject>
+@optional
+- (void)selectOK:(UIPickerSelect *)select;
+- (void)selectQuit:(UIPickerSelect *)select;
+@end

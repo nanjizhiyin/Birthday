@@ -1,0 +1,19 @@
+//
+//  UIBarButItem.h
+//  TingShuApp
+//
+//  Created by Gaojindan on 11-12-15.
+//  Copyright (c) 2011年 __MyCompanyName__. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+@interface UIBarButItem : UIBarButtonItem {
+    UIButton *button_;
+}
+@property(nonatomic,retain)UIButton *button;
+- (void)setRectMake:(CGRect)rect;
+- (void)setBackgroundImage:(NSString*)name withSelectedImage:(NSString*)selectedName;
+- (void)setBackgroundImage:(NSString*)name;
+- (void)addTarget:(id)target action:(SEL)action;
+@end

@@ -1,0 +1,35 @@
+//
+//  ViewManager.h
+//  Haonz
+//
+//  Created by gaojindan on 12-5-8.
+//  Copyright (c) 2012年 __MyCompanyName__. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+#import "Reachability.h"
+#import "SinaManager.h"
+
+@interface ViewManager : NSObject
+{
+    NetworkStatus networkStatus_;
+    UIView* errorInfo_;
+    UIImageView* imageview_;//网络错误
+}
++ (void)init;
+//显示后很快消失
++ (void)showStatusView:(NSString*)info withImageName:(NSString*)imageName;
+- (void)showStatusInfo:(NSString*)info withImageName:(NSString*)imageName;
+
++ (void)showAlertView:(NSString*)title withMessage:(NSString*)message withID:(id)delegate withTag:(NSInteger)tag;
++ (void)setNavBackGround:(UINavigationController*)nav;
++ (void)showActivityIndicatorView:(BOOL)b withInfo:(NSString*)string;
+- (void)showActivityIndicatorViewInfo:(NSString*)string;
++ (NSArray*)getPickerView:(UIViewController*)view withQuitAction:(SEL)quitAction withQuitAction:(SEL)OKAction withTag:(NSInteger)tag;
++ (void)showTransition:(id)obj withSubtype:(NSString*)subtype withType:(NSString*)type withCurve:(UIViewAnimationCurve*)curve;//系统动画
++ (void)show3D:(UIView*)view withAnimationDuration:(NSTimeInterval)animationDuration withEndRect:(CGRect)endRect withDelegate:(id)delegate withFun:(SEL)selector;//动画效果
+//给UIView添加点击事件
++ (void)addHandleSingle:(UIView *)view withAction:(SEL)action withDelegate:(id)delegate withTag:(NSInteger)tag;
+//返回weibo控制
++ (SinaManager*)getSinaManager;
+@end

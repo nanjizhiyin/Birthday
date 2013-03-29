@@ -1,0 +1,59 @@
+//
+//  UIBarBackItem.m
+//  Haonz
+//
+//  Created by 金丹 郜 on 12-3-23.
+//  Copyright (c) 2012年 __MyCompanyName__. All rights reserved.
+//
+
+#import "UIBarBackItem.h"
+#import "Manager.h"
+
+@implementation UIBarBackItem
+@synthesize button = button_;
+- (id)init
+{
+    self = [super init];
+	if(self!=nil)
+    {
+        button_ = [[UIButton alloc]init];
+        button_.frame = CGRectMake(0.0, 0.0, 44, 30);
+        [button_ setBackgroundImage:[UIImage imageNamed:@"navigation_back"] forState:UIControlStateNormal];
+        self.customView = button_;
+        [button_ release];
+    }
+    return self;
+}
+- (void)setRectMake:(CGRect)rect
+{
+    button_.frame = rect;
+}
+- (void)setBackgroundImage:(NSString*)name withSelectedImage:(NSString*)selectedName
+{
+    [button_ setBackgroundImage:[UIImage imageNamed:name] forState:UIControlStateNormal];
+    [button_ setBackgroundImage:[UIImage imageNamed:selectedName] forState:UIControlStateHighlighted];
+}
+- (void)setBackgroundImage:(NSString*)name
+{
+    [button_ setBackgroundImage:[UIImage imageNamed:name] forState:UIControlStateNormal];
+}
+- (void)setDelegate:(UIViewController*)delegate
+{
+    delegate_ = delegate;
+    [button_ addTarget:self action:@selector(gotoBack) forControlEvents:UIControlEventTouchUpInside];
+}
+- (void)gotoBack
+{
+    AudioServicesPlaySystemSound(kSoundItem);
+    [Manager deleteHttp];
+	[delegate_.navigationController popViewControllerAnimated:YES];
+}
+- (void)addTarget:(id)target action:(SEL)action
+{
+    [button_ addTarget:target action:action forControlEvents:UIControlEventTouchUpInside];
+}
+- (void)dealloc
+{
+    [super dealloc];
+}
+@end

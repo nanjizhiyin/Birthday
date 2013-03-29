@@ -1,0 +1,17 @@
+//
+//  UILabelStrikeThrough.h
+//  YINGYPH_HD
+//
+//  Created by Gaojindan on 12-1-18.
+//  Copyright (c) 2012年 __MyCompanyName__. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+@interface UILabelStrikeThrough : UILabel
+{
+    BOOL isWithStrikeThrough;
+}
+@property (nonatomic, assign) BOOL isWithStrikeThrough;
+
+@end

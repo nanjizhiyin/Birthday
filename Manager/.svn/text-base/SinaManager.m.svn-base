@@ -1,0 +1,229 @@
+//
+//  SinaManager.m
+//  Haonz
+//
+//  Created by gaojindan on 13-1-4.
+//
+//
+
+#import "SinaManager.h"
+#import "WoniuManager.h"
+#import "SinaWeibo.h"
+#import "ASIHTTPRequest.h"
+static SinaWeibo* kSinaWeibo = nil;
+static UIWindow* window = nil;
+
+@implementation SinaManager
+
+- (id)init
+{
+    self = [super init];
+    if (self) {
+        [SinaManager init];
+        NSString *token = [Manager getValue:SINA_ACCESS_TOKEN withPaht:PATH_SET];
+        if (token) {
+            SinaWeibo *sinaweibo = [SinaManager getSinaWeibo];
+            sinaweibo.accessToken = [Manager getValue:SINA_ACCESS_TOKEN withPaht:PATH_SET];
+            sinaweibo.expirationDate = [Manager getValue:SINA_EXPIRATIONDATE withPaht:PATH_SET];
+            sinaweibo.userID = [Manager getValue:SINA_UID withPaht:PATH_SET];
+        }
+    }
+    return self;
+}
++ (void)init
+{
+    if (window == nil) {
+        window = [[UIApplication sharedApplication].delegate window];
+    }
+}
++ (NSString*)getSinaUID
+{
+    return [Manager getValue:SINA_UID withPaht:PATH_SET];
+}
++ (NSString*)getSinaACCESS_TOKEN
+{
+    return [Manager getValue:SINA_ACCESS_TOKEN withPaht:PATH_SET];
+}
+#pragma mark sina
+//发送weibo
+- (void)sendWeibo:(NSString*)info withImage:(UIImage*)image
+{
+    _sinaBkgView = [[UIView alloc]initWithFrame:CGRectMake(0, 0, 320, kScreenHeight)];
+    _sinaBkgView.backgroundColor = [UIColor lightGrayColor];
+    _sinaBkgView.alpha = 0.7;
+    [window addSubview:_sinaBkgView];
+    [_sinaBkgView release];
+    
+    _sinaView = [[UIView alloc]initWithFrame:CGRectMake(0, 0, 320,kScreenHeight)];
+    [window addSubview:_sinaView];
+    
+    
+    UIImageView *viewBKG = [[UIImageView alloc]initWithFrame:CGRectMake(10, 90, 300, 200)];
+    viewBKG.image = [UIImage imageNamed:@"sina_bkg"];
+    [_sinaView addSubview:viewBKG];
+    [viewBKG release];
+    
+    UIButton *leftItem = [UIButton buttonWithType:UIButtonTypeCustom];
+    leftItem.frame = CGRectMake(20, 95, 40, 30);
+    [leftItem setImage:[UIImage imageNamed:@"sina_quit"] forState:UIControlStateNormal];
+    [leftItem addTarget:self action:@selector(quitSina) forControlEvents:UIControlEventTouchUpInside];
+    [_sinaView addSubview:leftItem];
+    
+    UIButton *rightItem = [UIButton buttonWithType:UIButtonTypeCustom];
+    rightItem.frame = CGRectMake(260, 95, 40, 30);
+    [rightItem setImage:[UIImage imageNamed:@"sina_ok"] forState:UIControlStateNormal];
+    [rightItem addTarget:self action:@selector(sendSina) forControlEvents:UIControlEventTouchUpInside];
+    [_sinaView addSubview:rightItem];
+    
+    UIImageView *imageView = [[UIImageView alloc]initWithFrame:CGRectMake(260, 258, 30, 30)];
+    imageView.backgroundColor = [UIColor clearColor];
+    imageView.layer.masksToBounds = TRUE;
+    imageView.layer.cornerRadius = 10;
+    imageView.image = image;
+    [_sinaView addSubview:imageView];
+    [imageView release];
+    
+    _sinaTextView = [[UITextView alloc]initWithFrame:CGRectMake(30, 130, 258, 116)];
+    //_sinaTextView.backgroundColor = [UIColor colorWithPatternImage:[UIImage imageNamed:@"sina_contentbkg"]];
+    _sinaTextView.text = info;
+    [_sinaView addSubview:_sinaTextView];
+    
+    _sinaImage = [image copy];
+    
+    NSString* sinauid = [SinaManager getSinaACCESS_TOKEN];
+    if (!sinauid) {
+        [self loginSina:YES];
+    }
+}
+#pragma mark sina
++ (void)loginSina:(BOOL)b withDelegate:(id)delegate
+{
+    if (!kSinaWeibo) {
+        kSinaWeibo = [SinaManager getSinaWeibo];
+    }
+    [kSinaWeibo setDelegate:delegate];
+    if (b) {
+        [kSinaWeibo logIn];
+    }else {
+        [kSinaWeibo logOut];
+    }
+}
+//动态登录微博
+- (void)loginSina:(BOOL)b
+{
+    if (!kSinaWeibo) {
+        kSinaWeibo = [SinaManager getSinaWeibo];
+    }
+    [kSinaWeibo setDelegate:self];
+    if (b) {
+        [kSinaWeibo logIn];
+    }else {
+        [kSinaWeibo logOut];
+    }
+}
+#pragma mark - SinaWeibo Delegate
+- (void)sinaweiboDidLogIn:(SinaWeibo *)sinaweibo
+{
+    [Manager setValue:sinaweibo.userID withKey:SINA_UID withPaht:PATH_SET];
+    [Manager setValue:sinaweibo.accessToken withKey:SINA_ACCESS_TOKEN withPaht:PATH_SET];
+    [Manager setValue:sinaweibo.expirationDate withKey:SINA_EXPIRATIONDATE withPaht:PATH_SET];
+    [[NSNotificationCenter defaultCenter] postNotificationName:kNotificationCenterSinaLogin object:nil];
+    
+    [self getUserInfoFromWeibo];
+}
+- (void)sinaweiboDidLogOut:(SinaWeibo *)sinaweibo
+{
+    [Manager setValue:nil withKey:SINA_UID withPaht:PATH_SET];
+    [Manager setValue:nil withKey:SINA_ACCESS_TOKEN withPaht:PATH_SET];
+    [Manager setValue:nil withKey:SINA_EXPIRATIONDATE withPaht:PATH_SET];
+    [Manager setValue:nil withKey:SINA_SCREEN_NAME withPaht:PATH_SET];
+    [[NSNotificationCenter defaultCenter] postNotificationName:kNotificationCenterSinaLogOut object:nil];
+}
+- (void)sinaweibo:(SinaWeibo *)sinaweibo logInDidFailWithError:(NSError *)error
+{
+    NSLog(@"sinaweibo logInDidFailWithError %@", error);
+}
++ (SinaWeibo*)getSinaWeibo
+{
+    if (!kSinaWeibo) {
+        NSString * bundleName_ = [INFODICTIONARY objectForKey:@"CFBundleName"];
+        if ([bundleName_ isEqualToString:@"Hidianhuabeifen"]) {
+        }else if ([bundleName_ isEqualToString:@"Hishengritixing"]) {
+            kSinaWeibo = [[SinaWeibo alloc] initWithAppKey:@"1794218022" appSecret:@"de249b5420f85d1b22ddea8ec042c0e3" appRedirectURI:@"http://www.haonaozi.com/sinasdk/callback.php" andDelegate:nil];
+        }else if ([bundleName_ isEqualToString:@"Woniumandi"]) {
+            kSinaWeibo = [[SinaWeibo alloc] initWithAppKey:@"2785283093" appSecret:@"6707c598fcf5ec398519038c473ffda7" appRedirectURI:@"http://www.haonaozi.com/sinasdk/callback.php" andDelegate:nil];
+        }else if ([bundleName_ isEqualToString:@"Yueba"]) {
+        }
+    }
+    return kSinaWeibo;
+}
+//去绑定
+- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
+{
+    NSInteger tag = alertView.tag;
+    if (tag == 0) {
+        if (buttonIndex == 1) {
+            [SinaManager loginSina:YES withDelegate:self];
+        }
+    }
+}
+- (void)quitSina
+{
+    [_sinaView removeFromSuperview];
+    [_sinaBkgView removeFromSuperview];
+}
+- (void)sendSina
+{
+    SinaWeibo *sinaweibo = [SinaManager getSinaWeibo];
+    [sinaweibo requestWithURL:@"statuses/upload.json"
+                       params:[NSMutableDictionary dictionaryWithObjectsAndKeys:
+                               _sinaTextView.text, @"status",
+                               _sinaImage, @"pic", nil]
+                   httpMethod:@"POST"
+                     delegate:self];
+}
+#pragma mark - SinaWeiboRequest Delegate
+
+- (void)request:(SinaWeiboRequest *)request didFailWithError:(NSError *)error
+{
+    NSLog(@"error = %@,%@",error,request.url);
+    if ([request.url hasSuffix:@"statuses/upload.json"])
+    {
+        [self quitSina];
+        [ViewManager showAlertView:@"微博发送失败！" withMessage:nil withID:nil withTag:0];
+    }else if ([request.url hasSuffix:@"oauth2/get_token_info"]){
+        [ViewManager showAlertView:@"获取失败" withMessage:nil withID:nil withTag:0];
+    }else{
+        [ViewManager showAlertView:@"微博操作失败！" withMessage:nil withID:nil withTag:0];
+    }
+    
+}
+
+- (void)request:(SinaWeiboRequest *)request didFinishLoadingWithResult:(id)result
+{
+    if ([request.url hasSuffix:@"statuses/upload.json"])
+    {
+        [self quitSina];
+        [ViewManager showAlertView:@"微博发送成功！" withMessage:nil withID:nil withTag:0];
+    }else if ([request.url hasSuffix:@"oauth2/get_token_info"]){
+        [ViewManager showAlertView:@"获取成功" withMessage:nil withID:nil withTag:0];
+    }else if ([request.url hasSuffix:@"users/show.json"])
+    {
+        NSDictionary *json = [result retain];
+        NSString* name =[json objectForKey:@"name"];
+        [Manager setValue:name withKey:SINA_SCREEN_NAME withPaht:PATH_SET];
+        [[NSNotificationCenter defaultCenter] postNotificationName:kNotificationCenterSinaGetInfo object:json];
+    }
+}
+//获取微博用户信息
+- (void)getUserInfoFromWeibo
+{
+    SinaWeibo *sinaweibo = [SinaManager getSinaWeibo];
+    NSLog(@"sinaweibo.userID = %@",sinaweibo.userID);
+    [sinaweibo requestWithURL:@"users/show.json"
+                       params:[NSMutableDictionary dictionaryWithObject:sinaweibo.userID forKey:@"uid"]
+                   httpMethod:@"GET"
+                     delegate:self];
+}
+
+@end

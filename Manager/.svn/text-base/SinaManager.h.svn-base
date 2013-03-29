@@ -1,0 +1,45 @@
+//
+//  SinaManager.h
+//  Haonz
+//
+//  Created by gaojindan on 13-1-4.
+//
+//
+
+#import <UIKit/UIKit.h>
+
+#define SINA_ACCESS_TOKEN @"sina_access_token"//php新浪登录成功后返回的code
+#define SINA_EXPIRATIONDATE @"sina_expirationDate"//php新浪登录成功后返回的
+#define SINA_UID @"sina_uid"//php新浪登录成功后返回的code
+
+#define SINA_SCREEN_NAME @"sina_screen_name"//昵称
+#define SINA_GENDER @"sina_gender"//性别
+
+#define kNotificationCenterSinaLogin        @"kNotificationCenterSinaLogin"//sina登录成功
+#define kNotificationCenterSinaLogOut        @"kNotificationCenterSinaLogOut"//sina登出成功
+#define kNotificationCenterSinaGetInfo        @"kNotificationCenterSinaGetInfo"//sina获取个人信息
+
+@class SinaWeibo;
+@interface SinaManager : NSObject
+{
+    UIView         *_sinaView;//sina
+    UIView         *_sinaBkgView;//sina
+    UIImage        *_sinaImage;
+    UITextView     *_sinaTextView;
+}
++ (void)init;
+//获取新浪微薄ID
++ (NSString*)getSinaUID;
+//获取新浪微薄token
++ (NSString*)getSinaACCESS_TOKEN;
+
++ (SinaWeibo*)getSinaWeibo;
+//静态登录微博
++ (void)loginSina:(BOOL)b withDelegate:(id)delegate;
+//动态登录微博
+- (void)loginSina:(BOOL)b;
+//发送微博
+- (void)sendWeibo:(NSString*)info withImage:(UIImage*)image;
+
+
+@end

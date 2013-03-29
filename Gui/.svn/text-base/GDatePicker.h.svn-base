@@ -1,0 +1,26 @@
+//
+//  GDatePicker.h
+//  Haonz
+//
+//  Created by gaojindan on 12-11-12.
+//
+//
+
+#import <UIKit/UIKit.h>
+
+@protocol GDatePickerDelegate;
+@interface GDatePicker : UIViewController
+{
+    UIDatePicker *_datePicker;
+}
+@property(nonatomic,retain) id<GDatePickerDelegate> delegate;
+@property(nonatomic,retain) UIDatePicker* datePicker;
+
+@end
+
+///////
+@protocol GDatePickerDelegate <NSObject>
+@optional
+- (void)selectOK:(GDatePicker *)select;
+- (void)selectQuit:(GDatePicker *)select;
+@end

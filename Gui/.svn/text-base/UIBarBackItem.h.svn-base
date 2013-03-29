@@ -1,0 +1,21 @@
+//
+//  UIBarBackItem.h
+//  Haonz
+//
+//  Created by 金丹 郜 on 12-3-23.
+//  Copyright (c) 2012年 __MyCompanyName__. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+@interface UIBarBackItem : UIBarButtonItem {
+    UIButton *button_;
+    UIViewController* delegate_;
+}
+@property(nonatomic,retain)UIButton *button;
+- (void)setRectMake:(CGRect)rect;
+- (void)setBackgroundImage:(NSString*)name withSelectedImage:(NSString*)selectedName;
+- (void)setBackgroundImage:(NSString*)name;
+- (void)addTarget:(id)target action:(SEL)action;
+- (void)setDelegate:(UIViewController*)delegate;
+@end

@@ -1,0 +1,51 @@
+//
+//  UIBarButItem.m
+//  TingShuApp
+//
+//  Created by Gaojindan on 11-12-15.
+//  Copyright (c) 2011年 __MyCompanyName__. All rights reserved.
+//
+
+#import "UIBarButItem.h"
+#import "Manager.h"
+
+@implementation UIBarButItem
+@synthesize button = button_;
+- (id)init
+{
+    self = [super init];
+	if(self!=nil){
+        button_ = [[UIButton alloc]init];
+        button_.frame = CGRectMake(0.0, 0.0, 50, 30);
+        [button_ addTarget:self action:@selector(playSound) forControlEvents:UIControlEventTouchUpInside];
+        self.customView = button_;
+        [button_ release];
+    }
+    return self;
+}
+- (void)playSound
+{
+    AudioServicesPlaySystemSound(kSoundItem);
+}
+- (void)setRectMake:(CGRect)rect
+{
+    button_.frame = rect;
+}
+- (void)setBackgroundImage:(NSString*)name withSelectedImage:(NSString*)selectedName
+{
+    [button_ setBackgroundImage:[UIImage imageNamed:name] forState:UIControlStateNormal];
+    [button_ setBackgroundImage:[UIImage imageNamed:selectedName] forState:UIControlStateHighlighted];
+}
+- (void)setBackgroundImage:(NSString*)name
+{
+    [button_ setBackgroundImage:[UIImage imageNamed:name] forState:UIControlStateNormal];
+}
+- (void)addTarget:(id)target action:(SEL)action
+{
+    [button_ addTarget:target action:action forControlEvents:UIControlEventTouchUpInside];
+}
+- (void)dealloc
+{
+    [super dealloc];
+}
+@end

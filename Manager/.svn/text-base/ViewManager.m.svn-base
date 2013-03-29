@@ -1,0 +1,372 @@
+//
+//  ViewManager.m
+//  Haonz
+//
+//  Created by gaojindan on 12-5-8.
+//  Copyright (c) 2012年 __MyCompanyName__. All rights reserved.
+//
+
+#import "ViewManager.h"
+
+#import "Manager.h"
+#import <QuartzCore/QuartzCore.h>
+#import "MessageUI/MFMessageComposeViewController.h"
+
+static UIWindow* window = nil;
+
+static UIActivityIndicatorView* kActivityView = nil;
+static UIView* kActivityViewBackground = nil;
+static UIView* kActivityMiniBkg = nil;
+static UILabel* kActivityLab = nil;
+static UIAlertView *kAlertView = nil;
+
+static UIAlertView *alertView = nil;
+
+static UIView* kStatusView = nil;
+static UIImageView* kStatusImageView = nil;
+static UILabel* kStatusLabel = nil;
+
+
+//@implementation GActivityIndicatorView
+//- (id)init
+//{
+//    self = [super init];
+//    if (self) {
+//        angle_ = 0;
+//        imageView_ = [[UIImageView alloc]initWithImage:[UIImage imageNamed:@"loading"]];
+//        imageView_.frame = CGRectMake(0, 0, 30, 30);
+//        
+//        imageView_.layer.masksToBounds = YES;
+//        imageView_.layer.cornerRadius = 15;
+//        imageView_.alpha = 1.0;
+//        
+//        [self addSubview:imageView_];
+//        [self start];
+//    }
+//    return self;
+//}
+//- (void)start
+//{
+//    if (!timer_.isValid) {
+//        timer_ = [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(rotation) userInfo:nil repeats:YES];
+//    }
+//}
+//- (void)stop
+//{
+//    if (timer_ != nil) {
+//        [timer_ invalidate];
+//    }
+//}
+//- (void)rotation
+//{
+//    imageView_.transform = CGAffineTransformMakeRotation(M_PI/4*angle_);
+//    angle_ += 1;
+//    if (angle_ == 8) {
+//        angle_ = 0;
+//    }
+//}
+//- (void)dealloc
+//{
+//    if (imageView_ != nil) {
+//        [imageView_ release];
+//    }
+//    
+//    if (timer_ != nil) {
+//        [timer_ release];
+//    }
+//    [self dealloc];
+//}
+//@end
+
+//ViewManager
+@implementation ViewManager
+- (id)init
+{
+    self = [super init];
+    if (self) {
+        networkStatus_ = [[Reachability reachabilityForInternetConnection] currentReachabilityStatus];
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(reachabilityChanged:)
+                                                     name: kReachabilityChangedNotification
+                                                   object: nil];
+        Reachability* hostReach_ = [Reachability reachabilityWithHostName:@"www.haonaozi.com"];
+        [hostReach_ startNotifier];
+    }
+    return self;
+}
+
+- (void)reachabilityChanged:(NSNotification *)note {
+    Reachability* curReach = [note object];
+    NSParameterAssert([curReach isKindOfClass: [Reachability class]]);
+    networkStatus_ = [curReach currentReachabilityStatus];
+    
+    if (networkStatus_ == NotReachable) {
+        [self showError];
+    }
+}
+-(BOOL)showReachStatus:(BOOL)b
+{
+    networkStatus_ = [[Reachability reachabilityForInternetConnection] currentReachabilityStatus];
+    if (networkStatus_ == NotReachable) {
+        if(b){
+            [self showError];
+        }
+        return NO;
+    }
+    return YES;
+}
+- (void)showError
+{
+    [ViewManager showActivityIndicatorView:FALSE withInfo:nil];
+    [[NSNotificationCenter defaultCenter]postNotificationName:notificationCenterIsLogin object:@"FALSE"];
+    [ViewManager showAlertView:@"[警告]" withMessage:@"网络错误" withID:nil withTag:0];
+}
+#pragma mark -
+#pragma mark SMS
+
++(void)sendSMS:(NSString*)string withRecipients:(NSArray*)recipients withViewController:(UIViewController*)viewController{
+    Class messageClass = (NSClassFromString(@"MFMessageComposeViewController"));
+    if (messageClass != nil) {
+        if ([messageClass canSendText]) {
+            MFMessageComposeViewController *picker = [[MFMessageComposeViewController alloc] init];
+            picker.messageComposeDelegate = viewController;
+            picker.recipients = recipients;
+            picker.body=string;
+            [viewController presentModalViewController:picker animated:YES];
+            [picker release];
+        }
+        else 
+            [ViewManager showAlertView:@"设备没有短信功能" withMessage:nil withID:nil withTag:0];
+    }
+    else 
+        [ViewManager showAlertView:@"iOS版本过低,iOS4.0以上才支持程序内发送短信" withMessage:nil withID:nil withTag:0];
+}
++ (void)init
+{
+    if (window == nil) {
+        window = [[UIApplication sharedApplication].delegate window];
+    }
+}
++(void)setNavBackGround:(UINavigationController*)nav_
+{
+    if ([SYSTEMVERSION floatValue] < 5)  {
+        nav_.navigationBar.layer.contents = (id)[UIImage imageNamed:@"navigationController"].CGImage;
+    }else{
+        [nav_.navigationBar setBackgroundImage:[UIImage imageNamed:@"navigationController"] forBarMetrics: UIBarMetricsDefault];
+    }   
+}
++(void)showAlertView:(NSString*)title withMessage:(NSString*)message withID:(id)delegate withTag:(NSInteger)tag
+{
+    [ViewManager showActivityIndicatorView:FALSE withInfo:nil];
+    if (delegate == nil) {
+        alertView = [[UIAlertView alloc] initWithTitle:title
+                                               message:message
+                                              delegate:delegate
+                                     cancelButtonTitle:@"确定"
+                                     otherButtonTitles:nil];
+    }
+    else{
+        alertView = [[UIAlertView alloc] initWithTitle:title
+                                               message:message
+                                              delegate:delegate
+                                     cancelButtonTitle:@"取消"
+                                     otherButtonTitles:@"确定",nil];
+        alertView.tag = tag;
+    }
+    [alertView show]; 
+    
+    [alertView release]; 
+}
++ (void)showActivityIndicatorView:(BOOL)b withInfo:(NSString*)string
+{     
+    if (b) {
+        NSInteger bkg = 200;
+        if (kActivityViewBackground == nil) {
+            kActivityViewBackground = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 320,kScreenHeight)];
+            kActivityViewBackground.backgroundColor = [UIColor clearColor];
+        }
+        if (kActivityMiniBkg == nil) {
+            kActivityMiniBkg = [[UIView alloc] initWithFrame:CGRectMake(60, 160, bkg,80)];
+            kActivityMiniBkg.backgroundColor = [UIColor blackColor];
+            kActivityMiniBkg.layer.masksToBounds = YES;
+            kActivityMiniBkg.layer.cornerRadius = 5;
+            kActivityMiniBkg.alpha = 0.5;
+        }
+        if (kActivityView == nil) {
+            kActivityView = [[UIActivityIndicatorView alloc]init];
+            kActivityView.frame = CGRectMake(145, 170, 30,30);
+            [kActivityView startAnimating];
+        }
+        if (kActivityLab == nil) {
+            kActivityLab = [[UILabel alloc]initWithFrame:CGRectMake(0, 40, bkg, 35)];
+            kActivityLab.textAlignment = UITextAlignmentCenter;
+            kActivityLab.text = @"正在加载...";
+            kActivityLab.textColor = [UIColor whiteColor];
+            kActivityLab.textAlignment = UITextAlignmentCenter;
+            kActivityLab.backgroundColor = [UIColor clearColor];
+            [kActivityMiniBkg addSubview:kActivityLab];
+        }
+        if (string != nil ) {
+            kActivityLab.text = string;
+        }
+        [window addSubview:kActivityViewBackground];
+        [window addSubview:kActivityMiniBkg];
+        [window addSubview:kActivityView];
+        kActivityView.hidden = NO;
+        kActivityViewBackground.hidden = NO;
+        kActivityMiniBkg.hidden = NO;
+    }
+    else
+    {
+        kActivityView.hidden = YES;
+        kActivityViewBackground.hidden = YES;
+        kActivityMiniBkg.hidden = YES;
+    }
+}
+- (void)showActivityIndicatorViewInfo:(NSString*)string
+{
+    kActivityLab.text = string;
+}
++ (NSArray*)getPickerView:(UIViewController*)view withQuitAction:(SEL)quitAction withQuitAction:(SEL)OKAction withTag:(NSInteger)tag
+{
+    UIPickerView* _pickerView = [[UIPickerView alloc]initWithFrame:CGRectMake(0, 0, 320, 100)];
+    _pickerView.delegate = view;
+    _pickerView.dataSource = view;
+    _pickerView.tag = tag;
+    _pickerView.showsSelectionIndicator = YES;
+    
+    UIViewController* pickViewController = [[UIViewController alloc]init];
+    pickViewController.view.backgroundColor = [UIColor redColor];
+    UIBarButtonItem* leftItem = [[UIBarButtonItem alloc]initWithTitle:@"取消" style:UIBarButtonItemStylePlain target:view action:quitAction];
+    UIBarButtonItem* rightItem = [[UIBarButtonItem alloc]initWithTitle:@"确定" style:UIBarButtonItemStylePlain target:view action:OKAction];
+    
+    pickViewController.navigationItem.leftBarButtonItem = leftItem;
+    pickViewController.navigationItem.rightBarButtonItem = rightItem;
+    [leftItem release];
+    [rightItem release];
+    
+    [pickViewController.view addSubview: _pickerView]; 
+    [_pickerView release];
+    
+    CGRect rect;
+    if ([SYSTEMVERSION floatValue] < 5) {
+        rect = CGRectMake(0, 159, 320, 350);
+    }else{
+        rect = CGRectMake(0, kScreenHeight - 270, 320, 350);
+    }
+    pickViewController.view.frame = rect;
+    
+    UINavigationController* birthdayNav_ = [[UINavigationController alloc]initWithRootViewController:pickViewController];
+    birthdayNav_.view.frame = rect;
+    [pickViewController release];
+    
+    [view.view addSubview:birthdayNav_.view]; 
+    
+    return [NSArray arrayWithObjects:birthdayNav_,_pickerView, nil];
+}
++ (void)showTransition:(id)obj withSubtype:(NSString*)subtype withType:(NSString*)type withCurve:(UIViewAnimationCurve*)curve//系统动画
+{
+    if (type == nil) {
+        type = kCATransitionPush;
+    }
+    if (subtype == nil) {
+        subtype = kCATransitionFromTop;
+    }
+    if (curve == nil) {
+        curve = UIViewAnimationCurveEaseInOut;
+    }
+    UIView* view = (UIView*)obj;
+    CATransition *animation = [CATransition animation];
+    animation.duration = 0.5f;
+    animation.timingFunction = curve;
+    animation.type = type;//kCATransitionPush
+    animation.subtype = subtype;
+    [view.layer addAnimation:animation forKey:@"animationID"];
+}
++ (void)show3D:(UIView*)view withAnimationDuration:(NSTimeInterval)animationDuration withEndRect:(CGRect)endRect withDelegate:(id)delegate withFun:(SEL)selector;//动画效果
+{
+    [UIView beginAnimations:nil context:nil];
+    [UIView setAnimationDuration:animationDuration];
+    
+    view.frame = endRect;
+    
+    
+    if (delegate != nil) {
+        [UIView setAnimationDelegate:delegate];
+    }
+    if (selector != nil) {
+        [UIView setAnimationDidStopSelector:selector];   //动画停止后，执行某个方法 
+    } 
+    [UIView commitAnimations]; 
+}
+//显示状态,如保存成功,删除成功
++ (void)showStatusView:(NSString*)info withImageName:(NSString*)imageName
+{
+    [ViewManager showActivityIndicatorView:FALSE withInfo:nil];
+    NSLog(@"showStatusView = %@",info);
+    static ViewManager* viewManager = nil;
+    if (viewManager == nil) {
+        viewManager = [[ViewManager alloc]init];
+    }
+    [viewManager showStatusInfo:info withImageName:imageName];
+}
+//显示后很快消失
+- (void)showStatusInfo:(NSString*)info withImageName:(NSString*)imageName
+{
+    if (kStatusView == nil) {
+        kStatusView = [[UIView alloc]initWithFrame:CGRectMake( (320-200)/2,(kScreenHeight-100)/2, 200, 100)];
+        kStatusView.backgroundColor = [UIColor grayColor];
+        kStatusView.layer.cornerRadius = 10;
+        kStatusView.layer.masksToBounds = YES;
+        kStatusImageView = [[UIImageView alloc]initWithImage:[UIImage imageNamed:@"icon"]];
+        kStatusImageView.frame = CGRectMake(85, 10, 30, 30);
+        [kStatusView addSubview:kStatusImageView];
+        
+        kStatusLabel = [[UILabel alloc]init];
+        kStatusLabel.font = [UIFont systemFontOfSize:12];
+        kStatusLabel.backgroundColor = [UIColor clearColor];
+        kStatusLabel.textAlignment = UITextAlignmentCenter;
+        kStatusLabel.frame = CGRectMake(0, 50, 200, 30);
+        [kStatusView addSubview:kStatusLabel];
+    }
+    if (imageName) {
+        kStatusImageView.image = [UIImage imageNamed:imageName];
+    }
+    kStatusLabel.text = info;
+    kStatusView.alpha = 1.0;
+    [window addSubview:kStatusView];
+    
+    [NSTimer scheduledTimerWithTimeInterval:(0.5) target:self selector:@selector(statusViewHide) userInfo:nil repeats:NO];
+}
+- (void)statusViewHide
+{
+    [UIView beginAnimations:nil context:kStatusView];
+    [UIView setAnimationDuration:1.0];
+    kStatusView.alpha = 0.0;
+    //[UIView setAnimationDelegate:self];
+    //[UIView setAnimationDidStopSelector:@selector(ErrorHide)];   //动画停止后，执行某个方法
+    [UIView commitAnimations];
+}
++ (void)addHandleSingle:(UIView *)view withAction:(SEL)action withDelegate:(id)delegate withTag:(NSInteger)tag
+{
+    view.userInteractionEnabled = YES;
+    CGRect rect = view.frame;
+    rect.origin = CGPointMake(0, 0);
+    UIButton *bt = [UIButton buttonWithType:UIButtonTypeCustom];
+    bt.frame = rect;
+    bt.alpha = 0.1;
+    bt.tag = tag;
+    [bt addTarget:delegate action:action forControlEvents:UIControlEventTouchUpInside];
+    [view addSubview:bt];
+}
+
+//返回weibo控制
++ (SinaManager*)getSinaManager
+{
+    static SinaManager* viewManager = nil;
+    if (viewManager == nil) {
+        viewManager = [[SinaManager alloc]init];
+    }
+    return viewManager;
+}
+@end
